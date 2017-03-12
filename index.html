@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link type="text/css" rel="stylesheet" href="style.css"></link>
+</head>
+
+<body>
+
+<div id="appHeader" class="header">
+  <h1 id="appTitle">To-do List</h1>
+  <span id="showModal" class="myButton">+</span>
+</div>
+
+<div id="addListModal" class="addListModal">
+  <div class="addListContent">
+    <div class="addListHeader">
+      <span class="closeButton">&times;</span>
+      <h2 id="addListTitle">Add to The List</h2>
+    </div>
+    <div class="addListBody"><br>
+      <label for="titleInput" class="inputList">Title</label>
+        <input type="text" id="titleInput" class="inputList"/><br><br>
+      <label for="descInput" class="inputList">Description</label>
+        <input type="text" id="descInput" class="inputList"><br><br>
+      <label for="startDateInput" class="inputList">Start Date</label>
+        <input type="date" id="startDateInput" class="inputList" value="2017-01-01"/><br><br>
+      <label for="endDateInput" class="inputList">End Date</label>
+        <input type="date" id="endDateInput" class="inputList" value="2017-12-31"/><br><br>
+      <label for="prioInput" class="inputList">Priority</label>
+        <select id="prioInput" class="inputList">
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
+        </select><br><br><br>
+      <span id="addListButton" class="myButton">Add</span><br>    
+    </div>
+  </div>
+</div>
+
+  <h3>Todo</h3>
+  <ul id="incomplete-tasks">
+
+  </ul>
+
+  <h3>Completed</h3>
+  <ul id="completed-tasks">
+
+  </ul>
+
+<script type="text/javascript" src="app.js"></script>
+
+</body>
+</html>
