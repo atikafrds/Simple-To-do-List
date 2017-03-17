@@ -12,7 +12,43 @@ var modal = document.getElementById('addListModal');
 var showModalBtn = document.getElementById("showModal");
 var closeModalBtn = document.getElementsByClassName("closeButton")[0];
 
-var createNewTaskElement = function(taskTitle, taskDesc, taskStartDate, taskEndDate, taskPrio) {
+var taskData = (localStorage.getItem("taskData")) ? JSON.parse(localStorage.getItem("taskData")):{
+  incomplete: [],
+  completed: []
+}
+
+loadTaskData();
+
+var findIndex = function(list, title) {
+  var idx = 0;
+  var found = false;
+  do {
+    console.log("cek idx");
+    console.log(idx);
+    console.log(list[idx][0]);
+    if (list[idx][0] == title) {
+      console.log("equal");
+      found = true;
+    } else {
+      idx++;
+    }
+  } while ((idx < list.length) && (!found));
+  console.log("idx");
+  if (found) {
+    console.log(idx);
+    return idx;
+  } else {
+    console.log(-1);
+    return -1;
+  }
+}
+
+function saveTaskData() {
+  localStorage.setItem("taskData", JSON.stringify(taskData));
+  console.log(taskData);
+}
+
+function createNewTaskElement (taskTitle, taskDesc, taskStartDate, taskEndDate, taskPrio, isCompleted) {
   var item = document.createElement("li");
   var checkBox = document.createElement("input");
   var titleLabel = document.createElement("label");
@@ -88,15 +124,45 @@ var createNewTaskElement = function(taskTitle, taskDesc, taskStartDate, taskEndD
   item.appendChild(prioLabel);
   item.appendChild(prioInput);
 
-  return item;
+  if (isCompleted == true) {
+    completedTasksHolder.appendChild(item);
+    bindTaskEvents(item, taskIncomplete);
+  } else {
+    incompleteTasksHolder.appendChild(item);
+    bindTaskEvents(item, taskCompleted);
+  }
+}
+
+function loadTaskData() {
+  console.log("Incomplete task length");
+  console.log(taskData.incomplete.length);
+  console.log("completed task length");
+  console.log(taskData.completed.length);
+  if (!taskData.incomplete.length && !taskData.completed.length) {
+    return;
+  } else {
+    for (var i = 0; i < taskData.incomplete.length; i++) {
+      var value = taskData.incomplete[i];
+      createNewTaskElement(taskData.incomplete[i][0], taskData.incomplete[i][1],
+        taskData.incomplete[i][2], taskData.incomplete[i][3], taskData.incomplete[i][4], false);
+    }
+
+    for (var i = 0; i < taskData.completed.length; i++) {
+      createNewTaskElement(taskData.completed[i][0], taskData.completed[i][1],
+        taskData.completed[i][2], taskData.completed[i][3], taskData.completed[i][4], true);
+    }
+  }
 }
 
 var addTask = function() {
-  var listItem = createNewTaskElement(titleInput.value, descInput.value, startDateInput.value,
-    endDateInput.value, prioInput.value);
-  incompleteTasksHolder.appendChild(listItem);
-  bindTaskEvents(listItem, taskCompleted);  
+  createNewTaskElement(titleInput.value, descInput.value, startDateInput.value,
+    endDateInput.value, prioInput.value, false);
   
+  var temp = [titleInput.value, descInput.value, startDateInput.value,
+  endDateInput.value, prioInput.value]
+
+  taskData.incomplete.push(temp);
+
   titleInput.value = "";
   descInput.value = "";
   startDateInput.value = "2017-01-01";
@@ -104,62 +170,105 @@ var addTask = function() {
   prioInput.value = "Low";
 
   modal.style.display = "none";  
+  saveTaskData();
 }
+
+var oldTitle;
 
 var editTask = function() {
   var listItem = this.parentNode;
+  var id = listItem.parentNode.id;
+
   var editInput = listItem.querySelectorAll("input[type=text]");
   var label = listItem.querySelectorAll("label");
   var editDate = listItem.querySelectorAll("input[type=date]");
   var editPrio = listItem.querySelector("select");
   
+  var index;
+
   var containsClass = listItem.classList.contains("editMode");
   if (containsClass) {
-    label[0].innerText = editInput[0].value;
-    if (label.length > 2) {
-      label[2].innerText = editInput[1].value;
-      label[4].innerText = editDate[0].value;
-      label[6].innerText = editDate[1].value;
-      label[8].innerText = editPrio.value;
+    if (id === 'incomplete-tasks') {
+      index = findIndex(taskData.incomplete, oldTitle);
+      taskData.incomplete[index][0] = editInput[0].value;
+      taskData.incomplete[index][1] = editInput[1].value;
+      taskData.incomplete[index][2] = editDate[0].value;
+      taskData.incomplete[index][3] = editDate[1].value;
+      taskData.incomplete[index][4] = editPrio.value;
+    } else {
+      index = findIndex(taskData.completed, oldTitle);
+      taskData.completed[index][0] = editInput[0].value;
+      taskData.completed[index][1] = editInput[1].value;
+      taskData.completed[index][2] = editDate[0].value;
+      taskData.completed[index][3] = editDate[1].value;
+      taskData.completed[index][4] = editPrio.value;
     }
+    label[0].innerText = editInput[0].value;    
+    label[2].innerText = editInput[1].value;
+    label[4].innerText = editDate[0].value;
+    label[6].innerText = editDate[1].value;
+    label[8].innerText = editPrio.value;
   } else {
     editInput[0].value = label[0].innerText;
-    if (label.length > 2) {
-      editInput[1].value = label[2].innerText;
-      editDate[0].value = label[4].innerText;
-      editDate[1].value = label[6].innerText;
-      editPrio.value = label[8].innerText;
-    }
+    editInput[1].value = label[2].innerText;
+    editDate[0].value = label[4].innerText;
+    editDate[1].value = label[6].innerText;
+    editPrio.value = label[8].innerText;
+    oldTitle = label[0].innerText;
   }
-  
+  saveTaskData();
   listItem.classList.toggle("editMode"); 
 }
 
-
-// Delete an existing task
 var deleteTask = function() {
   var listItem = this.parentNode;
   var ul = listItem.parentNode;
-  
+  var id = ul.id;
+  var label = listItem.querySelector("label");
+
+  if (id === 'incomplete-tasks') {
+    taskData.incomplete.splice(findIndex(taskData.incomplete, label.innerText), 1);
+  } else {
+    taskData.completed.splice(findIndex(taskData.completed, label.innerText), 1);
+  }
+
   ul.removeChild(listItem);
+  saveTaskData();
 }
 
-// Mark a task as complete 
 var taskCompleted = function() {
   var listItem = this.parentNode;
+  var ul = listItem.parentNode;
+  var label = listItem.querySelector("label");
+
+  var index = findIndex(taskData.incomplete, label.innerText);
+  taskData.completed.push(taskData.incomplete[index]);
+  taskData.incomplete.splice(index, 1);
+
+  ul.removeChild(listItem);
   completedTasksHolder.appendChild(listItem);
   bindTaskEvents(listItem, taskIncomplete);
+  saveTaskData();
+  console.log(taskData);
 }
 
-// Mark a task as incomplete
 var taskIncomplete = function() {
   var listItem = this.parentNode;
+  var ul = listItem.parentNode;
+  var label = listItem.querySelector("label");
+
+  var index = findIndex(taskData.completed, label.innerText);
+  taskData.incomplete.push(taskData.completed[index]);
+  taskData.completed.splice(index, 1);
+
+  ul.removeChild(listItem);
   incompleteTasksHolder.appendChild(listItem);
   bindTaskEvents(listItem, taskCompleted);
+  saveTaskData();
+  console.log(taskData);
 }
 
-var bindTaskEvents = function(taskListItem, checkBoxEventHandler) {
-  console.log("Bind list item events");
+function bindTaskEvents(taskListItem, checkBoxEventHandler) {
   var checkBox = taskListItem.querySelector("input[type=checkbox]");
   var editButton = taskListItem.querySelector("button.edit");
   var deleteButton = taskListItem.querySelector("button.delete");
@@ -169,12 +278,7 @@ var bindTaskEvents = function(taskListItem, checkBoxEventHandler) {
   checkBox.onchange = checkBoxEventHandler;
 }
 
-var ajaxRequest = function() {
-  console.log("AJAX Request");
-}
-
 addButton.addEventListener("click", addTask);
-addButton.addEventListener("click", ajaxRequest);
 
 for (var i = 0; i < incompleteTasksHolder.children.length; i++) {
   bindTaskEvents(incompleteTasksHolder.children[i], taskCompleted);
@@ -197,3 +301,10 @@ window.onclick = function(event) {
         modal.style.display = "none";
     }
 }
+
+// function resizeToMinimum(width, height){
+//     width = width > window.outerWidth ? width:window.outerWidth;
+//     height = height > window.outerHeight ? height:window.outerHeight;
+//     window.resizeTo(width, height);
+// };
+// window.addEventListener('resize', function(){resizeToMinimum(1000,1000)}, false)
